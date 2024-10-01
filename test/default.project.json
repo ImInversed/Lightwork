@@ -1,0 +1,24 @@
+{
+    "name": "light-test",
+    "tree": {
+      "$className": "DataModel",
+      "Players": {
+        "$properties": {
+          "CharacterAutoLoads": false
+        }
+      },
+      "ReplicatedStorage": {
+        "Packages": {
+          "Light": {
+            "$path": "../"
+          },
+          "$path": "../Packages"
+        }
+      },
+      "ServerScriptService": {
+        "runTests": {
+          "$path": "runTests.server.luau"
+        }
+      }
+    }
+  }
