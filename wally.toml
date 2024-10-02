@@ -7,3 +7,4 @@ exclude = ["**"]
 include = ["src", "default.project.json", "wally.lock", "wally.toml"]
 
 [dependencies]
+Promise = "evaera/promise@4.0.0"

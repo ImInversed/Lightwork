@@ -9,15 +9,15 @@
       },
       "ReplicatedStorage": {
         "Packages": {
-          "Light": {
-            "$path": "../"
+          "Lightwork": {
+            "$path": "src"
           },
-          "$path": "../Packages"
+          "$path": "Packages"
         }
       },
       "ServerScriptService": {
         "runTests": {
-          "$path": "runTests.server.luau"
+          "$path": "test/runTests.server.luau"
         }
       }
     }
