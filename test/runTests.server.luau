@@ -25,7 +25,9 @@ Players.PlayerAdded:Connect(function(player: Player)
 			print("closing")
 		end)
 
-		document:save()
+		document:save():andThen(function()
+			print("Ok?")
+		end)
 	end)
 end)
 

@@ -69,7 +69,7 @@ end
 
 function Document:close()
 	for _, closingHook in self._beforeCloseHooks do
-		closingHook()
+		pcall(closingHook)
 	end
 
 	documentSaver.removeDocument(self)
@@ -78,6 +78,7 @@ function Document:close()
 		if currentData == nil then
 			return "fail"
 		end
+
 		if currentData.sessionId ~= self._sessionId then
 			return "session was stolen"
 		end

@@ -40,7 +40,9 @@
 
 local Collection = require(script.Collection)
 local documentSaver = require(script.documentSaver)
+local throttler = require(script.throttler)
 
+throttler.start()
 documentSaver.start()
 
 local function createCollection(name, dataTemplate)

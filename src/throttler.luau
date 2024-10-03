@@ -1,14 +1,20 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local DataStoreService = game:GetService("DataStoreService")
+local RunService = game:GetService("RunService")
 
 local packages = ReplicatedStorage.Packages
 local Promise = require(packages.Promise)
 
-local throttler = {}
+local requestFulfilled = Instance.new("BindableEvent")
 
-function throttler.updateAsync(key: string, dataStore: DataStore, transform: (...any) -> (string, { any }, { number }))
+local function getUpdateAsyncBudget()
+	return DataStoreService:GetRequestBudgetForRequestType(Enum.DataStoreRequestType.UpdateAsync)
+end
+
+local function updateUpdateAsync(request)
 	return Promise.new(function(resolve, _, _)
-		dataStore:UpdateAsync(key, function(...)
-			local result, transformed, userIds = transform(...)
+		request.dataStore:UpdateAsync(request.key, function(...)
+			local result, transformed, userIds = request.transform(...)
 
 			if result ~= "success" then
 				warn(result)
@@ -21,6 +27,42 @@ function throttler.updateAsync(key: string, dataStore: DataStore, transform: (..
 		end)
 
 		resolve()
+	end):finally(function()
+		requestFulfilled:Fire(request.key)
+	end)
+end
+
+local throttler = {}
+throttler.queue = {}
+throttler.requestFulfilled = requestFulfilled.Event
+
+function throttler.updateAsync(key: string, dataStore: DataStore, transform: (...any) -> (string, { any }, { number }))
+	table.insert(throttler.queue, {
+		key = key,
+		dataStore = dataStore,
+		transform = transform,
+	})
+
+	return Promise.fromEvent(throttler.requestFulfilled, function(fulfilledKey: string)
+		return fulfilledKey == key
+	end)
+end
+
+function throttler.start()
+	RunService.Heartbeat:Connect(function()
+		local request = throttler.queue[1]
+
+		if not request then
+			return
+		end
+
+		if getUpdateAsyncBudget() == 0 then
+			return
+		end
+
+		updateUpdateAsync(request)
+
+		table.remove(throttler.queue, 1)
 	end)
 end
 
