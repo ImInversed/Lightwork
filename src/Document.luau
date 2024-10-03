@@ -22,13 +22,13 @@ function Document.new(dataStore, data: Data, sessionId: string, key: string)
 	self._data = data
 	self._sessionId = sessionId
 
+	self._data.data = freezeDeep(data.data)
+
 	return self
 end
 
 function Document:write(newData)
-	freezeDeep(newData)
-
-	self._data.data = newData
+	self._data.data = freezeDeep(newData)
 end
 
 function Document:save()

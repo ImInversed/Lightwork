@@ -1,13 +1,17 @@
-local function freezeDeep(value)
-	if typeof(value) ~= "table" then
-		return
-	end
+local function freezeDeep(t)
+	local valueType = typeof(t)
 
-	if not table.isfrozen(value) then
-		table.freeze(value)
-	end
+	if valueType == "table" then
+		local newValue = {}
 
-	for _, innerValue in value do
-		freezeDeep(innerValue)
+		for key, value in pairs(t) do
+			newValue[key] = freezeDeep(value)
+		end
+
+		return table.freeze(newValue)
+	else
+		return t
 	end
 end
+
+return freezeDeep

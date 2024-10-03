@@ -16,6 +16,8 @@ Players.PlayerAdded:Connect(function(player: Player)
 
 		local data = document:read()
 
+		data.coins = 5
+
 		print(data)
 
 		document:write({
