@@ -5,10 +5,15 @@ local documentSaver = require(script.Parent.documentSaver)
 local packages = ReplicatedStorage.Packages
 local Promise = require(packages.Promise)
 
+type Data = {
+	sessionId: string,
+	data: { unknown },
+}
+
 local Document = {}
 Document.__index = Document
 
-function Document.new(dataStore, data, sessionId: string, key: string)
+function Document.new(dataStore, data: Data, sessionId: string, key: string)
 	local self = setmetatable({}, Document)
 
 	self._dataStore = dataStore
@@ -24,17 +29,17 @@ function Document:write(newData)
 end
 
 function Document:save()
-	local canFail = function()
-		return Promise.new(function(resolve, _)
+	return Promise.retryWithDelay(function()
+		return Promise.new(function(resolve, reject)
 			local result, keyInfo: DataStoreKeyInfo = self._dataStore:UpdateAsync(self._key, function(currentData)
 				if currentData == nil then
-					print("Fail")
+					reject("Fail")
 
 					return
 				end
 
 				if currentData.sessionId ~= self._sessionId then
-					print("Session was stolen from us")
+					reject("Session was stolen from us")
 
 					return
 				end
@@ -44,12 +49,12 @@ function Document:save()
 
 			resolve(result, keyInfo)
 		end)
-	end
-
-	return Promise.retryWithDelay(canFail, 5, 1)
+	end, 5, 1)
 end
 
-function Document:read() end
+function Document:read()
+	return self._data.data
+end
 
 function Document:close()
 	documentSaver.removeDocument(self)
