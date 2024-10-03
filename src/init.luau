@@ -26,16 +26,16 @@
 
     Desirable Features:
 
-    Session Locking -- Only allows one server to read and manipulate data.
+    Session Locking + -- Only allows one server to read and manipulate data.
     Data Validation
     Migrations
     Throttling
-    Forces Immutability
+    Forces Immutability +
     Save Batching -- Pending saves are combined into a single datastore request once available
-    Auto Save
-    Hooks -- Run hooks before and after operations
-    Retries -- Failed datastore requests will be retried
-    Bind To Close
+    Auto Save +
+    Hooks + -- Run hooks before and after operations
+    Retries + -- Failed datastore requests will be retried
+    Bind To Close +
 ]]
 
 local Collection = require(script.Collection)

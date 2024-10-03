@@ -2,6 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local documentSaver = require(script.Parent.documentSaver)
 local freezeDeep = require(script.Parent.freezeDeep)
+local throttler = require(script.Parent.throttler)
 
 local packages = ReplicatedStorage.Packages
 local Promise = require(packages.Promise)
@@ -39,33 +40,26 @@ function Document:save()
 		beforeSaveHook()
 	end
 
+	-- nil returns in UpdateAsync calls cancel the operation. Which is nice
+
 	return Promise.retryWithDelay(function()
-		return Promise.new(function(resolve, reject)
-			local result, keyInfo: DataStoreKeyInfo = self._dataStore:UpdateAsync(
-				self._key,
-				function(currentData: Data?)
-					if currentData == nil then
-						reject("Fail")
-
-						return
-					end
-
-					if currentData.sessionId ~= self._sessionId then
-						reject("Session was stolen from us")
-
-						return
-					end
-
-					return self._data
+		throttler
+			.updateAsync(self._key, self._dataStore, function(currentData)
+				if currentData == nil then
+					return "failed"
 				end
-			)
 
-			resolve(result, keyInfo)
-		end):finally(function()
-			for _, afterSaveHook in self._afterSaveHooks do
-				afterSaveHook()
-			end
-		end)
+				if currentData.sessionId ~= self._sessionId then
+					return "session was stolen"
+				end
+
+				return "success", self._data
+			end)
+			:finally(function()
+				for _, afterSaveHook in self._afterSaveHooks do
+					afterSaveHook()
+				end
+			end)
 	end, 5, 1)
 end
 
@@ -80,25 +74,17 @@ function Document:close()
 
 	documentSaver.removeDocument(self)
 
-	return Promise.new(function(resolve, reject)
-		local data, keyInfo = self._dataStore:UpdateAsync(self._key, function(currentData: Data?)
-			if currentData == nil then
-				reject("Fail")
+	return throttler.updateAsync(self._key, self._dataStore, function(currentData)
+		if currentData == nil then
+			return "fail"
+		end
+		if currentData.sessionId ~= self._sessionId then
+			return "session was stolen"
+		end
 
-				return currentData
-			end
-			if currentData.sessionId ~= self._sessionId then
-				reject("Session was stolen from us")
+		self._data.sessionId = nil
 
-				return currentData
-			end
-
-			self._data.sessionId = nil
-
-			return self._data
-		end)
-
-		resolve("success", data, keyInfo)
+		return "success", self._data
 	end)
 end
 
