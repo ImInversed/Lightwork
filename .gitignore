@@ -1,5 +1,8 @@
 # Project place file
-/Light.rbxlx
+/project.rbxlx
+
+/sourcemap.json
+/robloxv2.yml
 
 # Roblox Studio lock files
 /*.rbxlx.lock
