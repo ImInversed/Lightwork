@@ -1,5 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local documentSaver = require(script.Parent.documentSaver)
+
 local packages = ReplicatedStorage.Packages
 local Promise = require(packages.Promise)
 
@@ -50,30 +52,28 @@ end
 function Document:read() end
 
 function Document:close()
-	print("Closing")
+	documentSaver.removeDocument(self._key)
 
-	pcall(function()
-		self._dataStore:UpdateAsync(self._key, function(currentData)
+	return Promise.new(function(resolve, reject)
+		local data, keyInfo = self._dataStore:UpdateAsync(self._key, function(currentData)
 			if currentData == nil then
-				print("Fail")
+				reject("Fail")
 
-				return
+				return currentData
 			end
 
 			if currentData.sessionId ~= self._sessionId then
-				print("Session was stolen from us")
+				reject("Session was stolen from us")
 
-				return
+				return currentData
 			end
-
-			-- Perfect, we own the current sessionId, therefore we can close it.
-
-			print("Closed")
 
 			self._data.sessionId = nil
 
 			return self._data
 		end)
+
+		resolve("success", data, keyInfo)
 	end)
 end
 
