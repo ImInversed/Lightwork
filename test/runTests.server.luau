@@ -11,18 +11,19 @@ local documents = {}
 
 Players.PlayerAdded:Connect(function(player: Player)
 	collection:load(player.UserId):andThen(function(document)
-		print(document)
 		documents[player.UserId] = document
 
-		local data = document:read()
+		document:beforeSaving(function()
+			print("Hi")
+		end)
 
-		data.coins = 5
+		document:afterSaving(function()
+			print("Hello")
+		end)
 
-		print(data)
-
-		document:write({
-			coins = 2,
-		})
+		document:beforeClosing(function()
+			print("closing")
+		end)
 	end)
 end)
 
