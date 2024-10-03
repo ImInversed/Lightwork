@@ -57,7 +57,7 @@ function Collection:load(key: string)
 	return Promise.retryWithDelay(canFail, 5, 1):andThen(function(result)
 		local document = Document.new(self._datastore, result, result.sessionId, key)
 
-		documentSaver.addDocument(document, key)
+		documentSaver.addDocument(document)
 
 		return document
 	end)

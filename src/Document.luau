@@ -52,7 +52,7 @@ end
 function Document:read() end
 
 function Document:close()
-	documentSaver.removeDocument(self._key)
+	documentSaver.removeDocument(self)
 
 	return Promise.new(function(resolve, reject)
 		local data, keyInfo = self._dataStore:UpdateAsync(self._key, function(currentData)
