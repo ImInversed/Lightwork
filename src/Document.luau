@@ -21,6 +21,9 @@ function Document.new(dataStore, data: Data, sessionId: string, key: string)
 	self._key = key
 	self._data = data
 	self._sessionId = sessionId
+	self._beforeSaveHooks = {}
+	self._afterSaveHooks = {}
+	self._beforeCloseHooks = {}
 
 	self._data.data = freezeDeep(data.data)
 
@@ -32,6 +35,10 @@ function Document:write(newData)
 end
 
 function Document:save()
+	for _, beforeSaveHook in self._beforeSaveHooks do
+		beforeSaveHook()
+	end
+
 	return Promise.retryWithDelay(function()
 		return Promise.new(function(resolve, reject)
 			local result, keyInfo: DataStoreKeyInfo = self._dataStore:UpdateAsync(
@@ -54,6 +61,10 @@ function Document:save()
 			)
 
 			resolve(result, keyInfo)
+		end):finally(function()
+			for _, afterSaveHook in self._afterSaveHooks do
+				afterSaveHook()
+			end
 		end)
 	end, 5, 1)
 end
@@ -63,6 +74,10 @@ function Document:read()
 end
 
 function Document:close()
+	for _, closingHook in self._beforeCloseHooks do
+		closingHook()
+	end
+
 	documentSaver.removeDocument(self)
 
 	return Promise.new(function(resolve, reject)
@@ -85,6 +100,18 @@ function Document:close()
 
 		resolve("success", data, keyInfo)
 	end)
+end
+
+function Document:beforeSaving(callback)
+	table.insert(self._beforeSaveHooks, callback)
+end
+
+function Document:afterSaving(callback)
+	table.insert(self._afterSaveHooks, callback)
+end
+
+function Document:beforeClosing(callback)
+	table.insert(self._beforeCloseHooks, callback)
 end
 
 return Document
