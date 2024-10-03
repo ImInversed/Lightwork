@@ -13,10 +13,18 @@ Players.PlayerAdded:Connect(function(player: Player)
 	collection:load(player.UserId):andThen(function(document)
 		print(document)
 		documents[player.UserId] = document
+
+		local data = document:read()
+
+		print(data)
+
+		document:write({
+			coins = 2,
+		})
 	end)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-	documents[player.UserId]:close()
+	documents[player.UserId]:close():catch(warn)
 	print("wabam")
 end)

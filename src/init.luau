@@ -30,7 +30,7 @@
     Data Validation
     Migrations
     Throttling
-    Immutability
+    Forces Immutability
     Save Batching -- Pending saves are combined into a single datastore request once available
     Auto Save
     Hooks -- Run hooks before and after operations

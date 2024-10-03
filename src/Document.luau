@@ -1,12 +1,13 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local documentSaver = require(script.Parent.documentSaver)
+local freezeDeep = require(script.Parent.freezeDeep)
 
 local packages = ReplicatedStorage.Packages
 local Promise = require(packages.Promise)
 
 type Data = {
-	sessionId: string,
+	sessionId: string?,
 	data: { unknown },
 }
 
@@ -25,27 +26,32 @@ function Document.new(dataStore, data: Data, sessionId: string, key: string)
 end
 
 function Document:write(newData)
+	freezeDeep(newData)
+
 	self._data.data = newData
 end
 
 function Document:save()
 	return Promise.retryWithDelay(function()
 		return Promise.new(function(resolve, reject)
-			local result, keyInfo: DataStoreKeyInfo = self._dataStore:UpdateAsync(self._key, function(currentData)
-				if currentData == nil then
-					reject("Fail")
+			local result, keyInfo: DataStoreKeyInfo = self._dataStore:UpdateAsync(
+				self._key,
+				function(currentData: Data?)
+					if currentData == nil then
+						reject("Fail")
 
-					return
+						return
+					end
+
+					if currentData.sessionId ~= self._sessionId then
+						reject("Session was stolen from us")
+
+						return
+					end
+
+					return self._data
 				end
-
-				if currentData.sessionId ~= self._sessionId then
-					reject("Session was stolen from us")
-
-					return
-				end
-
-				return self._data
-			end)
+			)
 
 			resolve(result, keyInfo)
 		end)
@@ -60,13 +66,12 @@ function Document:close()
 	documentSaver.removeDocument(self)
 
 	return Promise.new(function(resolve, reject)
-		local data, keyInfo = self._dataStore:UpdateAsync(self._key, function(currentData)
+		local data, keyInfo = self._dataStore:UpdateAsync(self._key, function(currentData: Data?)
 			if currentData == nil then
 				reject("Fail")
 
 				return currentData
 			end
-
 			if currentData.sessionId ~= self._sessionId then
 				reject("Session was stolen from us")
 
