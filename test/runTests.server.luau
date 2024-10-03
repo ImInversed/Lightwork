@@ -1,0 +1,22 @@
+local Players = game:GetService("Players")
+
+local packages = game.ReplicatedStorage.Packages
+local lightwork = require(packages.Lightwork)
+
+local collection = lightwork.createCollection("test", {
+	coins = 1,
+})
+
+local documents = {}
+
+Players.PlayerAdded:Connect(function(player: Player)
+	collection:load(player.UserId):andThen(function(document)
+		print(document)
+		documents[player.UserId] = document
+	end)
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+	documents[player.UserId]:close()
+	print("wabam")
+end)

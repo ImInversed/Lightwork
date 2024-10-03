@@ -1,0 +1,24 @@
+{
+    "name": "lightwork-test",
+    "tree": {
+      "$className": "DataModel",
+      "Players": {
+        "$properties": {
+          "CharacterAutoLoads": false
+        }
+      },
+      "ReplicatedStorage": {
+        "Packages": {
+          "Lightwork": {
+            "$path": "src"
+          },
+          "$path": "Packages"
+        }
+      },
+      "ServerScriptService": {
+        "runTests": {
+          "$path": "test/runTests.server.luau"
+        }
+      }
+    }
+  }

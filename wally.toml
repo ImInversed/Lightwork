@@ -1,0 +1,10 @@
+[package]
+name = "iminversed/lightwork"
+version = "0.1.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+exclude = ["**"]
+include = ["src", "default.project.json", "wally.lock", "wally.toml"]
+
+[dependencies]
+Promise = "evaera/promise@4.0.0"
