@@ -12,23 +12,27 @@ local function getUpdateAsyncBudget()
 end
 
 local function updateUpdateAsync(request)
-	return Promise.new(function(resolve, _, _)
-		request.dataStore:UpdateAsync(request.key, function(...)
-			local result, transformed, userIds = request.transform(...)
+	return Promise.new(function(resolve, reject, _)
+		local success, transformedData, keyInfo = pcall(function()
+			return request.dataStore:UpdateAsync(request.key, function(...)
+				local result, transformed, userIds = request.transform(...)
 
-			if result ~= "success" then
-				warn(result)
-				return nil
-			end
+				if result ~= "success" then
+					warn(result)
+					return nil
+				end
 
-			print(transformed, userIds)
-
-			return transformed, userIds
+				return transformed, userIds
+			end)
 		end)
 
-		resolve()
-	end):finally(function()
-		requestFulfilled:Fire(request.key)
+		if success then
+			resolve(transformedData, keyInfo)
+		else
+			reject()
+		end
+
+		requestFulfilled:Fire(request.key, transformedData, keyInfo)
 	end)
 end
 
@@ -43,7 +47,7 @@ function throttler.updateAsync(key: string, dataStore: DataStore, transform: (..
 		transform = transform,
 	})
 
-	return Promise.fromEvent(throttler.requestFulfilled, function(fulfilledKey: string)
+	return Promise.fromEvent(throttler.requestFulfilled, function(fulfilledKey: string, _, _)
 		return fulfilledKey == key
 	end)
 end
