@@ -89,8 +89,6 @@ function Document:close()
 	end)
 end
 
-function Document:migrate(newDataTemplate) end
-
 function Document:beforeSaving(callback)
 	table.insert(self._beforeSaveHooks, callback)
 end
