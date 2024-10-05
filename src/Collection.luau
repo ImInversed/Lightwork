@@ -14,12 +14,13 @@ local SESSION_LOCK_EXPIRE = 20 * 60
 local Collection = {}
 Collection.__index = Collection
 
-function Collection.new(name: string, dataTemplate)
+function Collection.new(name: string, dataTemplate, migrations)
 	local self = setmetatable({}, Collection)
 
 	self._name = name
 	self._dataTemplate = dataTemplate
 	self._dataStore = DataStoreService:GetDataStore(name)
+	self._migrations = migrations
 
 	return self
 end
@@ -27,11 +28,11 @@ end
 function Collection:load(key: string)
 	return Promise.retryWithDelay(function()
 		return throttler.updateAsync(key, self._dataStore, function(currentData, dataStoreKeyInfo: DataStoreKeyInfo)
-			currentData = nil
 			if currentData == nil then
 				currentData = {
 					data = self._dataTemplate,
 					sessionId = nil,
+					migrationVersion = #self._migrations,
 				}
 			end
 
@@ -39,10 +40,31 @@ function Collection:load(key: string)
 				currentData.sessionId ~= nil
 				and (DateTime.now().UnixTimestampMillis - dataStoreKeyInfo.UpdatedTime) / 1000 < SESSION_LOCK_EXPIRE
 			then
-				return "fail"
+				return "session locked"
 			else
 				currentData.sessionId = HttpService:GenerateGUID(false)
 			end
+
+			local serverVersion = #self._migrations
+			local savedVersion = currentData.migrationVersion
+
+			if serverVersion > savedVersion then
+				for version = savedVersion + 1, #self._migrations do
+					local ok, data = pcall(self._migrations[version], currentData.data)
+
+					if not ok then
+						return false, `Migration {version} threw an error: {data}`
+					end
+
+					if data == nil then
+						return false, `Migration {version} returned 'nil'`
+					end
+
+					currentData.data = data
+				end
+			end
+
+			currentData.migrationVersion = serverVersion
 
 			return "success", currentData
 		end)
@@ -54,5 +76,7 @@ function Collection:load(key: string)
 		return document
 	end)
 end
+
+function Collection:migrateData(newDataTemplate) end
 
 return Collection
