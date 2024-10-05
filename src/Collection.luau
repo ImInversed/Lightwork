@@ -77,6 +77,4 @@ function Collection:load(key: string)
 	end)
 end
 
-function Collection:migrateData(newDataTemplate) end
-
 return Collection
