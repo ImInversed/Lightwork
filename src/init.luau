@@ -17,10 +17,6 @@
     collection:load(key, userIds):andThen(function(document)
         local data = document:read()
 
-        -- This will update all users who join your game to the most up-to-date data template.
-        document:migrate({
-            gems = 0,
-        })
         document:save()
     end)
 
@@ -29,9 +25,8 @@
     Session Locking + -- Only allows one server to read and manipulate data.
     Data Validation
     Migrations
-    Throttling
+    Throttling +
     Forces Immutability +
-    Save Batching -- Pending saves are combined into a single datastore request once available
     Auto Save +
     Hooks + -- Run hooks before and after operations
     Retries + -- Failed datastore requests will be retried
@@ -45,8 +40,8 @@ local throttler = require(script.throttler)
 throttler.start()
 documentSaver.start()
 
-local function createCollection(name, dataTemplate)
-	return Collection.new(name, dataTemplate)
+local function createCollection(...)
+	return Collection.new(...)
 end
 
 return {
